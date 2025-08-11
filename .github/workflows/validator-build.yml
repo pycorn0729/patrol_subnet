@@ -1,0 +1,35 @@
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  build:
+    services:
+      postgres:
+        image: postgres:alpine
+        env:
+          POSTGRES_USER: patrol
+          POSTGRES_PASSWORD: password
+        ports:
+          - "5432:5432"
+
+    runs-on: ubuntu-latest
+    environment: build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: network=host
+
+      - name: Build
+        uses: docker/build-push-action@v6
+        with:
+          file: validator/Dockerfile
+          build-args: |
+            TEST_POSTGRESQL_URL=postgresql+asyncpg://patrol:password@localhost:5432/patrol
+            ARCHIVE_NODE=${{ secrets.ARCHIVE_NODE }}
+          push: false
